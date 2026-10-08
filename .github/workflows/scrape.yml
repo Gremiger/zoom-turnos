@@ -1,0 +1,36 @@
+name: scrape
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"  # GitHub puede atrasarlo unos minutos; el cierre de cada turno es a los 30 min
+  workflow_dispatch:
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Foto de turnos
+        env:
+          ZOOM_EMAIL: ${{ secrets.ZOOM_EMAIL }}
+          ZOOM_PASSWORD: ${{ secrets.ZOOM_PASSWORD }}
+        run: python scrape.py
+      - name: Reporte
+        run: python report.py
+      - name: Commit si hubo cambios
+        run: |
+          git add data docs
+          if git diff --cached --quiet -- data; then exit 0; fi
+          git -c user.name="zoom-bot" -c user.email="zoom-bot@users.noreply.github.com" commit -q -m "datos $(date -u +%FT%H:%MZ)"
+          git push
