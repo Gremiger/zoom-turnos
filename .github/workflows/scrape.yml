@@ -2,7 +2,7 @@ name: scrape
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # GitHub puede atrasarlo unos minutos; el cierre de cada turno es a los 30 min
+    - cron: "3,23,43 * * * *"  # GitHub puede atrasarlo unos minutos; el cierre de cada turno es a los 30 min
   workflow_dispatch:
 
 concurrency:
