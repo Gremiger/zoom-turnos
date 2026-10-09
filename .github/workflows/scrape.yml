@@ -2,7 +2,7 @@ name: scrape
 
 on:
   schedule:
-    - cron: "3,23,43 * * * *"  # GitHub puede atrasarlo unos minutos; el cierre de cada turno es a los 30 min
+    - cron: "25,55 0,1,9-23 * * *"  # respaldo: el disparo principal es cron-job.org (el cron de GitHub descarta corridas)
   workflow_dispatch:
 
 concurrency:
