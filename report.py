@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).parent
 CSV_PATH = ROOT / "data" / "observaciones.csv"
+EXCLUDED_PATH = ROOT / "data" / "dias_excepcionales.csv"  # feriados y similares: fuera de los promedios
 OUT = ROOT / "docs" / "index.html"
 TZ = ZoneInfo("America/Argentina/Cordoba")
 CUTOFF = timedelta(minutes=30)
@@ -46,9 +47,11 @@ def color(pct):
     return f"hsl({hue:.0f} 65% 45%)"
 
 
-def render(finals, n_obs):
+def render(finals, n_obs, excluded):
     stats = defaultdict(list)  # (weekday, hora) -> [pct...]
     for (fecha, hora), (b, c) in finals.items():
+        if fecha in excluded:
+            continue
         wd = datetime.strptime(fecha, "%Y-%m-%d").weekday()
         stats[(wd, hora)].append(100 * b / c if c else 0)
     horas = sorted({h for _, h in stats})
@@ -88,7 +91,8 @@ def render(finals, n_obs):
             for (f, h), (b, c) in sorted(finals.items())
             if f == fecha
         )
-        recent.append(f"<tr><th>{DAYS[wd]} {fecha[8:]}/{fecha[5:7]}</th><td>{items}</td></tr>")
+        note = f'<br><span class="muted">{html.escape(excluded[fecha])} · excluido</span>' if fecha in excluded else ""
+        recent.append(f"<tr><th>{DAYS[wd]} {fecha[8:]}/{fecha[5:7]}{note}</th><td>{items}</td></tr>")
 
     updated = datetime.now(TZ).strftime("%d/%m/%Y %H:%M")
     period = f"{fechas[0]} → {fechas[-1]}" if fechas else "sin datos todavía"
@@ -115,7 +119,7 @@ table.recent th {{ text-align:left; padding:6px 10px 6px 0; white-space:nowrap; 
 </style></head><body><main>
 <h1>Musculación · Sede Banda Norte Río IV</h1>
 <p class="muted">Ocupación final de cada turno (reservas al cierre, inicio + 30 min) sobre el cupo.
-Período: {period} · {n_obs} observaciones · actualizado {updated}.</p>
+Período: {period} · {n_obs} observaciones · {len(excluded)} días excepcionales excluidos · actualizado {updated}.</p>
 
 <h2>Horarios más tranquilos <span class="muted">(sin lun–vie 9–15)</span></h2>
 <ol>{rank_html or "<li>Todavía no hay datos.</li>"}</ol>
@@ -136,7 +140,11 @@ def main():
         with CSV_PATH.open() as f:
             rows = list(csv.DictReader(f))
     OUT.parent.mkdir(exist_ok=True)
-    OUT.write_text(render(final_snapshots(rows), len(rows)))
+    excluded = {}
+    if EXCLUDED_PATH.exists():
+        with EXCLUDED_PATH.open() as f:
+            excluded = {r["fecha"]: r["motivo"] for r in csv.DictReader(f)}
+    OUT.write_text(render(final_snapshots(rows), len(rows), excluded))
     print(f"Reporte: {OUT}")
 
 

@@ -7,6 +7,8 @@ Registra antes de cada corte la ocupación de los turnos de MUSCULACION de la Se
 - `report.py` — calcula la ocupación final de cada turno (última foto antes de inicio + 30 min) y genera la página.
 - `.github/workflows/scrape.yml` — corre ambos a los :25 y :55 (5 min antes de cada corte), de 6 a 22 h ART, y commitea si hubo cambios. Lo dispara cron-job.org vía `workflow_dispatch`; el `schedule` de GitHub queda como respaldo.
 
+Días atípicos (feriados, etc.): agregarlos a `data/dias_excepcionales.csv` (`fecha,motivo`); se siguen registrando pero no cuentan en los promedios. Se puede editar desde la web de GitHub.
+
 Secrets necesarios: `ZOOM_EMAIL`, `ZOOM_PASSWORD`.
 
 Local: `ZOOM_EMAIL=... ZOOM_PASSWORD=... python3 scrape.py && python3 report.py`
